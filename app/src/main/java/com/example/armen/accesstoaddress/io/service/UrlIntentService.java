@@ -5,30 +5,23 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import com.example.armen.accesstoaddress.db.handler.PlQueryHandler;
+import com.example.armen.accesstoaddress.db.pojo.UrlModel;
+import com.example.armen.accesstoaddress.db.pojo.UrlResponse;
+import com.example.armen.accesstoaddress.io.bus.ApiEvent;
 import com.example.armen.accesstoaddress.io.bus.BusProvider;
 import com.example.armen.accesstoaddress.io.rest.HttpRequestManager;
 import com.example.armen.accesstoaddress.io.rest.HttpResponseUtil;
-import com.example.armen.accesstoaddress.pojo.UrlModel;
-import com.example.armen.accesstoaddress.pojo.ContactResponse;
 import com.example.armen.accesstoaddress.util.Constant;
 import com.google.gson.Gson;
 
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 
-public class UrlListIntentService extends IntentService {
 
-    // ===========================================================
-    // Constants
-    // ===========================================================
+public class UrlIntentService extends IntentService {
 
-    private static final String LOG_TAG = UrlListIntentService.class.getSimpleName();
-
-    private class Extra {
-        static final String URL = "CONTACT_LIST";
-        static final String POST_ENTITY = "POST_ENTITY";
-        static final String REQUEST_TYPE = "REQUEST_TYPE";
-    }
+    private static final String LOG_TAG = UrlIntentService.class.getSimpleName();
 
     // ===========================================================
     // Fields
@@ -38,8 +31,8 @@ public class UrlListIntentService extends IntentService {
     // Constructors
     // ===========================================================
 
-    public UrlListIntentService() {
-        super(UrlListIntentService.class.getName());
+    public UrlIntentService() {
+        super(UrlIntentService.class.getName());
     }
 
     // ===========================================================
@@ -59,19 +52,20 @@ public class UrlListIntentService extends IntentService {
      * @param requestType - string constant that helps us to distinguish what request it is
      * @param postEntity  - POST request entity (json string that must be sent on server)
      */
-
-    public static void start(Context context, String url, String postEntity, int requestType) {
-        Intent intent = new Intent(context, UrlListIntentService.class);
-        intent.putExtra(Extra.URL, url);
-        intent.putExtra(Extra.REQUEST_TYPE, requestType);
-        intent.putExtra(Extra.POST_ENTITY, postEntity);
+    public static void start(Context context, String url, String postEntity,
+                             int requestType) {
+        Intent intent = new Intent(context, UrlIntentService.class);
+        intent.putExtra(Constant.Extra.URL, url);
+        intent.putExtra(Constant.Extra.REQUEST_TYPE, requestType);
+        intent.putExtra(Constant.Extra.POST_ENTITY, postEntity);
         context.startService(intent);
     }
 
-    public static void start(Context context, String url, int requestType) {
-        Intent intent = new Intent(context, UrlListIntentService.class);
-        intent.putExtra(Extra.URL, url);
-        intent.putExtra(Extra.REQUEST_TYPE, requestType);
+    public static void start(Context context, String url,
+                             int requestType) {
+        Intent intent = new Intent(context, UrlIntentService.class);
+        intent.putExtra(Constant.Extra.URL, url);
+        intent.putExtra(Constant.Extra.REQUEST_TYPE, requestType);
         context.startService(intent);
     }
 
@@ -81,51 +75,46 @@ public class UrlListIntentService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        String url = intent.getExtras().getString(Extra.URL);
-        String data = intent.getExtras().getString(Extra.POST_ENTITY);
-        int requestType = intent.getExtras().getInt(Extra.REQUEST_TYPE);
+        String url = intent.getExtras().getString(Constant.Extra.URL);
+        String data = intent.getExtras().getString(Constant.Extra.POST_ENTITY);
+        int requestType = intent.getExtras().getInt(Constant.Extra.REQUEST_TYPE);
         Log.i(LOG_TAG, requestType + Constant.Symbol.SPACE + url);
 
         HttpURLConnection connection;
 
         switch (requestType) {
-            case HttpRequestManager.RequestType.URL_LIST:
+            case Constant.RequestType.PRODUCT_LIST:
 
+                // calling API
                 connection = HttpRequestManager.executeRequest(
                         url,
-                        HttpRequestManager.RequestMethod.GET,
+                        "GET",
                         null
                 );
 
+                // parse API result to get json string
                 String jsonList = HttpResponseUtil.parseResponse(connection);
 
-                ContactResponse contactResponse = new Gson().fromJson(jsonList, ContactResponse.class);
-                ArrayList<UrlModel> urlModels = contactResponse.getUrlModels();
+                // deserialize json string to model
+                UrlResponse productResponse = new Gson().fromJson(jsonList, UrlResponse.class);
 
+                // check server data (null if something went wrong)
+                if (productResponse != null) {
 
-                BusProvider.getInstance().post(urlModels);
+                    // get all products
+                    ArrayList<UrlModel> urlModels = productResponse.getUrlModels();
 
+                    // add all products into db
+                    PlQueryHandler.addUrlModels(this, urlModels);
+
+                    // post to UI
+                    BusProvider.getInstance().post(new ApiEvent<>(ApiEvent.EventType.PRODUCT_LIST_LOADED, true, urlModels));
+
+                } else {
+                    BusProvider.getInstance().post(new ApiEvent<>(ApiEvent.EventType.PRODUCT_LIST_LOADED, false));
+                }
                 break;
-
-            case HttpRequestManager.RequestType.URL_ITEM:
-
-                connection = HttpRequestManager.executeRequest(
-                        url,
-                        HttpRequestManager.RequestMethod.GET,
-                        null
-                );
-
-                String jsonItem = HttpResponseUtil.parseResponse(connection);
-
-                UrlModel urlModel = new Gson().fromJson(jsonItem, UrlModel.class);
-
-
-                BusProvider.getInstance().post(urlModel);
-
-                break;
-
         }
-
     }
 
     // ===========================================================

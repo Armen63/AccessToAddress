@@ -1,4 +1,4 @@
-package com.example.armen.accesstoaddress.pojo;
+package com.example.armen.accesstoaddress.db.pojo;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -6,13 +6,13 @@ import android.os.Parcelable;
 import com.google.gson.annotations.SerializedName;
 
 
-public class UrlModel implements Parcelable {
+public class UrlModel implements Parcelable, Comparable{
 
     @SerializedName("url_id")
     private long id;
 
     @SerializedName("url_address")
-    private String UrlAddress;
+    private String urlAddress;
 
     @SerializedName("image")
     private String image;
@@ -22,14 +22,26 @@ public class UrlModel implements Parcelable {
 
     public UrlModel(long id, String urlAddress) {
         this.id = id;
-        UrlAddress = urlAddress;
+        this.urlAddress = urlAddress;
     }
 
     public UrlModel(long id, String urlAddress, String image) {
         this.id = id;
-        UrlAddress = urlAddress;
+        this.urlAddress = urlAddress;
         this.image = image;
     }
+
+    public static final Creator<UrlModel> CREATOR = new Creator<UrlModel>() {
+        @Override
+        public UrlModel createFromParcel(Parcel in) {
+            return new UrlModel(in);
+        }
+
+        @Override
+        public UrlModel[] newArray(int size) {
+            return new UrlModel[size];
+        }
+    };
 
     public long getId() {
         return id;
@@ -40,11 +52,11 @@ public class UrlModel implements Parcelable {
     }
 
     public String getUrlAddress() {
-        return UrlAddress;
+        return urlAddress;
     }
 
     public void setUrlAddress(String urlAddress) {
-        UrlAddress = urlAddress;
+        this.urlAddress = urlAddress;
     }
 
     public String getImage() {
@@ -61,21 +73,9 @@ public class UrlModel implements Parcelable {
 
     protected UrlModel(Parcel in) {
         id = in.readLong();
-        UrlAddress = in.readString();
+        urlAddress = in.readString();
         image = in.readString();
     }
-
-    public static final Creator<UrlModel> CREATOR = new Creator<UrlModel>() {
-        @Override
-        public UrlModel createFromParcel(Parcel in) {
-            return new UrlModel(in);
-        }
-
-        @Override
-        public UrlModel[] newArray(int size) {
-            return new UrlModel[size];
-        }
-    };
 
     @Override
     public int describeContents() {
@@ -85,7 +85,19 @@ public class UrlModel implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeLong(id);
-        dest.writeString(UrlAddress);
+        dest.writeString(urlAddress);
         dest.writeString(image);
+    }
+
+    @Override
+    public int compareTo(Object o) {
+
+        UrlModel entry = (UrlModel) o;
+
+        int result = urlAddress.compareTo(urlAddress);
+        if(result != 0) {
+            return result;
+        }
+        return 0;
     }
 }

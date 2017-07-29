@@ -16,6 +16,5 @@
         android:id="@+id/iv_item_access_checker"
         android:layout_width="12dp"
         android:layout_height="36dp"
-        android:layout_weight="1"
-        android:background="@color/white_gray" />
+        android:layout_weight="1" />
 </LinearLayout>

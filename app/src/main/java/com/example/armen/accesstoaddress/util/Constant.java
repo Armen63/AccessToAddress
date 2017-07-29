@@ -6,9 +6,11 @@ public class Constant {
     public class API {
 
         public static final String HOST = "https://raw.githubusercontent.com/Armen63/armenasatryan.github.io";
-        public static final String CONTACT_LIST = HOST + "/master/url%20list/urls.json";
-        public static final String CONTACT_ITEM = HOST + "/master/contact_list/contacts/"; // + id
-        public static final String CONTACT_ITEM_POSTFIX = "/details.json";
+        public static final String URL_LIST = HOST + "/master/url%20list/urls.json";
+        public static final String ACCESS_EXIST = "https://github.com/Armen63/armenasatryan.github.io/blob/master/url%20list/access_exist.png?raw=true";
+        public static final String NO_EXIST = "https://raw.githubusercontent.com/Armen63/armenasatryan.github.io/master/url%20list/no_access.png";
+//        public static final String URL_ITEM = HOST + "/master/contact_list/contacts/"; // + id
+//        public static final String URL_ITEM_POSTFIX = "/details.json";
     }
 
     public class Action {
@@ -20,27 +22,26 @@ public class Constant {
     }
 
     public class Extra {
-        public static final String EXTRA_USER = "EXTRA_USER";
-        public static final String EXTRA_CONTACT = "EXTRA_CONTACT";
-        public static final String EXTRA_CONTACT_ID = "EXTRA_CONTACT_ID";
+        public static final String EXTRA_URL = "EXTRA_URL";
+        public static final String EXTRA_URL_ID = "EXTRA_URL_ID";
+        public static final String PRODUCT_ID = "PRODUCT_ID";
+        public static final String URL = "URL";
+        public static final String POST_ENTITY = "POST_ENTITY";
+        public static final String REQUEST_TYPE = "REQUEST_TYPE";
+        public static final String NOTIFICATION_DATA = "NOTIFICATION_DATA";
     }
 
-    public class POJO {
-        public static final String CONTACTS = "contacts";
-
-        public static final String CONTACT_ID = "contact_id";
-        public static final String FIRST_NAME = "first_name";
-        public static final String LAST_NAME = "last_name";
-        public static final String PHONE = "phone";
-        public static final String EMAIL = "email";
-        public static final String NOTE = "note";
-        public static final String IMAGE = "image";
-    }
 
     public class Preferances {
         public static final String PREFERENCES_NAME = "PREFERENCES_NAME";
         public static final String USER_ID = "USER_ID";
         public static final String LOGGED_IN = "LOGGED_IN";
+    }
+
+
+    public class RequestType {
+        public static final int PRODUCT_LIST = 1;
+        public static final int PRODUCT_ITEM = 2;
     }
 
     public class Bundle {

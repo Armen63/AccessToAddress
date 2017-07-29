@@ -2,6 +2,7 @@ package com.example.armen.accesstoaddress.ui.adapter;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,7 +13,7 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.example.armen.accesstoaddress.R;
-import com.example.armen.accesstoaddress.pojo.UrlModel;
+import com.example.armen.accesstoaddress.db.pojo.UrlModel;
 
 import java.util.ArrayList;
 
@@ -35,8 +36,9 @@ public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
     // Constructors
     // ===========================================================
 
-    public UrlAdapter(ArrayList<UrlModel> contactArrayList, OnItemClickListener onItemClickListener) {
-        mUrlList = contactArrayList;
+    public UrlAdapter(ArrayList<UrlModel> urlAddressList, OnItemClickListener onItemClickListener) {
+        mUrlList = urlAddressList;
+        Log.d(LOG_TAG, mUrlList.size() + "  1");
         mOnItemClickListener = onItemClickListener;
     }
 
@@ -62,6 +64,7 @@ public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
 
     @Override
     public int getItemCount() {
+        Log.d(LOG_TAG, mUrlList.size() + "  2");
         return mUrlList.size();
     }
 
@@ -91,16 +94,17 @@ public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
 
         Context context;
         TextView tvUrlAddress;
-        LinearLayout llItemContainer;
         ImageView ivUrl;
+        LinearLayout llItemContainer;
         OnItemClickListener onItemClickListener;
-        ArrayList<UrlModel> contactArrayList;
+        ArrayList<UrlModel> urlList;
 
         ViewHolder(View itemView, ArrayList<UrlModel> urlModelArrayList, OnItemClickListener onItemClickListener) {
             super(itemView);
             this.context = itemView.getContext();
-            this.contactArrayList = urlModelArrayList;
+            this.urlList = urlModelArrayList;
             this.onItemClickListener = onItemClickListener;
+            Log.d(LOG_TAG, urlList.size() + "3");
             findViews(itemView);
         }
 
@@ -113,16 +117,16 @@ public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
         void bindData() {
 
             Glide.with(itemView.getContext())
-                    .load(contactArrayList.get(getAdapterPosition()).getImage())
+                    .load(urlList.get(getAdapterPosition()).getImage())
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .into(ivUrl);
 
-            tvUrlAddress.setText(contactArrayList.get(getAdapterPosition()).getUrlAddress());
+            tvUrlAddress.setText(urlList.get(getAdapterPosition()).getUrlAddress());
 
             llItemContainer.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    onItemClickListener.onItemClick(contactArrayList.get(getAdapterPosition()),
+                    onItemClickListener.onItemClick(urlList.get(getAdapterPosition()),
                             getAdapterPosition());
                 }
             });
@@ -130,7 +134,7 @@ public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
             llItemContainer.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    onItemClickListener.onItemLongClick(contactArrayList.get(getAdapterPosition()),
+                    onItemClickListener.onItemLongClick(urlList.get(getAdapterPosition()),
                             getAdapterPosition());
                     return true;
                 }

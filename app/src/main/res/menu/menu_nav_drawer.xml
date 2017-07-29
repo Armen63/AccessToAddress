@@ -4,10 +4,9 @@
         android:id="@+id/menu_top"
         android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_contact_list"
+            android:id="@+id/nav_url_list"
             android:icon="@drawable/ic_url_list"
             android:title="Url List" />
-
     </group>
 
 </menu>

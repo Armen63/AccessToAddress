@@ -1,43 +1,48 @@
 package com.example.armen.accesstoaddress.ui.fragment;
 
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import com.example.armen.accesstoaddress.R;
+import com.example.armen.accesstoaddress.db.cursor.CursorReader;
+import com.example.armen.accesstoaddress.db.handler.UrlAsyncQueryHandler;
+import com.example.armen.accesstoaddress.db.pojo.UrlModel;
 import com.example.armen.accesstoaddress.io.bus.BusProvider;
-import com.example.armen.accesstoaddress.io.rest.HttpRequestManager;
-import com.example.armen.accesstoaddress.io.service.UrlListIntentService;
-import com.example.armen.accesstoaddress.pojo.UrlModel;
+import com.example.armen.accesstoaddress.io.service.UrlIntentService;
 import com.example.armen.accesstoaddress.ui.activity.AddUrlActivity;
 import com.example.armen.accesstoaddress.ui.adapter.UrlAdapter;
 import com.example.armen.accesstoaddress.util.Constant;
 import com.example.armen.accesstoaddress.util.NetworkUtil;
 import com.google.common.eventbus.Subscribe;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.TreeSet;
 
 import static android.app.Activity.RESULT_OK;
 import static com.example.armen.accesstoaddress.ui.activity.AddUrlActivity.ADD_URL;
 
 public class UrlListFragment extends BaseFragment implements View.OnClickListener,
-        UrlAdapter.OnItemClickListener {
+        UrlAdapter.OnItemClickListener, UrlAsyncQueryHandler.AsyncQueryListener, SearchView.OnQueryTextListener {
 
     private static final int REQUEST_CODE = 100;
 
@@ -51,6 +56,7 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
     // Fields
     // ===========================================================
 
+    private MenuItem mMenuSearch;
     private ImageView mIvAccess;
     private Bundle mArgumentData;
     private RecyclerView mRv;
@@ -58,7 +64,8 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
 
     private UrlAdapter mRecyclerViewAdapter;
     private LinearLayoutManager mLlm;
-    private ArrayList<UrlModel> mUriList;
+    private ArrayList<UrlModel> mUrlList;
+    private UrlAsyncQueryHandler mUrlAsyncQueryHandler;
 
     // ===========================================================
     // Constructors
@@ -97,47 +104,44 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
         findViews(view);
         init();
         setListeners();
-        getData();
-        customizeActionBar();
-        loadContacts();
-
-        try {
-            Log.d(LOG_TAG," mtela log");
-            Log.d(LOG_TAG, String.valueOf(exists("https://stackoverflow.com/questions/26418486/check-if-url-exists-or-not-on-server")));
-            Log.d(LOG_TAG, String.valueOf(exists("google.com")));
-            Log.d(LOG_TAG, String.valueOf(exists("faceboasdnasdaok.com")));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        loadData();
 
         return view;
     }
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.menu_sort, menu);
+        inflater.inflate(R.menu.menu_search, menu);
+        mMenuSearch = menu.findItem(R.id.menu_search);
+        SearchView searchView = (SearchView) MenuItemCompat.getActionView(mMenuSearch);
+        searchView.setOnClickListener(this);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
-//    @Override
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//        switch (item.getItemId()) {
-//            case R.id.menu_sort_by_name:
-//                Intent intent = new Intent(getContext(), AddUrlActivity.class);
-//                break;
-//        }
-//        return true;
-//    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_sort_by_name:
+                TreeSet<UrlModel> set = new TreeSet<>(mUrlList);
+                ArrayList<UrlModel> arr = new ArrayList<>(set);
+                mUrlList.clear();
+                mUrlList = arr;
+                Log.d(LOG_TAG, mUrlList.size()+"ttttttttttt");
+                Log.d(LOG_TAG, arr.size()+"ttttttttttt");
+                mRecyclerViewAdapter.notifyDataSetChanged();
 
-    public boolean exists(String url) throws IOException {
+                break;
+        }
+        return true;
+    }
+
+    public static boolean exists(String URLName) {
         try {
             HttpURLConnection.setFollowRedirects(false);
-            URL ulr = new URL(url);
-            HttpURLConnection con =  (HttpURLConnection) ulr.openConnection();
+            HttpURLConnection con = (HttpURLConnection) new URL(URLName).openConnection();
             con.setRequestMethod("HEAD");
             return (con.getResponseCode() == HttpURLConnection.HTTP_OK);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
@@ -165,11 +169,14 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
 
 
     @Override
-    public void onItemClick(UrlModel contact, int position) {
+    public void onItemClick(UrlModel urlAddress, int position) {
     }
 
     @Override
-    public void onItemLongClick(UrlModel contact, int position) {
+    public void onItemLongClick(final UrlModel urlModel, final int position) {
+        mUrlAsyncQueryHandler.deleteUrl(urlModel, position);
+        mUrlList.remove(position);
+        mRecyclerViewAdapter.notifyItemRemoved(position);
     }
 
     @Override
@@ -178,8 +185,8 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
         if (data != null) {
             if (resultCode == RESULT_OK && requestCode == REQUEST_CODE) {
                 UrlModel uriModel = data.getParcelableExtra(ADD_URL);
-                mUriList.add(uriModel);
-//                mTlAsyncQueryHandler.getProduct(id);
+
+                mUrlList.add(uriModel);
                 mRecyclerViewAdapter.notifyDataSetChanged();
 
             }
@@ -191,14 +198,12 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
 
     @Subscribe
     public void onEventReceived(ArrayList<UrlModel> UrlModel) {
-        mUriList.clear();
-        mUriList.addAll(UrlModel);
-        mRecyclerViewAdapter.notifyDataSetChanged();
     }
 
     // ===========================================================
     // Methods
     // ===========================================================
+
 
     private void setListeners() {
         mFloatingActionButton.setOnClickListener(this);
@@ -211,13 +216,15 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
     }
 
     private void init() {
+        mUrlAsyncQueryHandler = new UrlAsyncQueryHandler(getActivity().getApplicationContext(), this);
+
         mRv.setHasFixedSize(true);
         mLlm = new LinearLayoutManager(getActivity());
         mRv.setLayoutManager(mLlm);
         mRv.setItemAnimator(new DefaultItemAnimator());
         mRv.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
-        mUriList = new ArrayList<>();
-        mRecyclerViewAdapter = new UrlAdapter(mUriList, this);
+        mUrlList = new ArrayList<>();
+        mRecyclerViewAdapter = new UrlAdapter(mUrlList, this);
         mRv.setAdapter(mRecyclerViewAdapter);
     }
 
@@ -231,16 +238,70 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
 
     }
 
-    private void loadContacts() {
+    private void loadData() {
         if (NetworkUtil.getInstance().isConnected(getActivity())) {
-            UrlListIntentService.start(
+            UrlIntentService.start(
                     getActivity(),
-                    Constant.API.CONTACT_LIST,
-                    HttpRequestManager.RequestType.URL_LIST
+                    Constant.API.URL_LIST,
+                    Constant.RequestType.PRODUCT_LIST
             );
+
         } else {
-            Toast.makeText(getContext(), "internet chka", Toast.LENGTH_SHORT).show();
+            mUrlAsyncQueryHandler.getUrls();
         }
+    }
+
+    @Override
+    public void onResume() {
+        mUrlAsyncQueryHandler.getUrls();
+        super.onResume();
+    }
+
+
+    @Override
+    public void onQueryComplete(int token, Object cookie, Cursor cursor) {
+        switch (token) {
+            case UrlAsyncQueryHandler.QueryToken.GET_URLS:
+                ArrayList<UrlModel> products = CursorReader.parseUrls(cursor);
+                mUrlList.clear();
+                mUrlList.addAll(products);
+                mRecyclerViewAdapter.notifyDataSetChanged();
+                break;
+        }
+    }
+
+    @Override
+    public void onInsertComplete(int token, Object cookie, Uri uri) {
+
+    }
+
+    @Override
+    public void onUpdateComplete(int token, Object cookie, int result) {
+
+    }
+
+    @Override
+    public void onDeleteComplete(int token, Object cookie, int result) {
+
+    }
+
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        return false;
+    }
+
+    @Override
+    public boolean onQueryTextChange(String newText) {
+//        newText = newText.toLowerCase();
+//        ArrayList<UrlModel> ss = new ArrayList<>();
+//        for(UrlModel model : mUrlList){
+//            String name = model.getUrlAddress().toLowerCase();
+//            if(name.contains(newText)){
+//                ss.add(model);
+//            }
+//        }
+//        mRecyclerViewAdapter.setFilter(ss);
+        return true;
     }
 
     // ===========================================================

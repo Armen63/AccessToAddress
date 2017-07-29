@@ -26,6 +26,7 @@ public class HttpRequestManager {
         public static final String POST = "POST";
         public static final String GET = "GET";
         public static final String PUT = "PUT";
+        public static final String HEAD = "HEAD";
     }
 
     // ===========================================================
@@ -63,6 +64,8 @@ public class HttpRequestManager {
             connection.setUseCaches(false);
 
             switch (requestMethod) {
+                case RequestMethod.HEAD:
+                    // TODO
                 case RequestMethod.GET:
                     connection.connect();
                     break;

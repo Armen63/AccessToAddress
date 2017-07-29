@@ -1,6 +1,8 @@
 package com.example.armen.accesstoaddress.ui.activity;
 
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.view.MenuItem;
@@ -10,9 +12,11 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.armen.accesstoaddress.R;
-import com.example.armen.accesstoaddress.pojo.UrlModel;
+import com.example.armen.accesstoaddress.db.handler.UrlAsyncQueryHandler;
+import com.example.armen.accesstoaddress.db.pojo.UrlModel;
+import com.example.armen.accesstoaddress.ui.fragment.UrlListFragment;
 
-public class AddUrlActivity extends BaseActivity implements View.OnClickListener {
+public class AddUrlActivity extends BaseActivity implements View.OnClickListener, UrlAsyncQueryHandler.AsyncQueryListener {
 
     // ===========================================================
     // Constants
@@ -27,7 +31,8 @@ public class AddUrlActivity extends BaseActivity implements View.OnClickListener
 
     private EditText mEtAddressUrl;
     private Button mBtnAdd;
-    private UrlModel mUri;
+    private UrlModel mUrl;
+    private UrlAsyncQueryHandler mUrlAsyncQueryHandler;
 
     // ===========================================================
     // Constructors
@@ -45,8 +50,13 @@ public class AddUrlActivity extends BaseActivity implements View.OnClickListener
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         findViews();
+        init();
         setListeners();
         customizeActionBar();
+    }
+
+    private void init() {
+        mUrlAsyncQueryHandler = new UrlAsyncQueryHandler(this, this);
     }
 
     @Override
@@ -83,6 +93,34 @@ public class AddUrlActivity extends BaseActivity implements View.OnClickListener
     // Other Listeners, methods for/from Interfaces
     // ===========================================================
 
+    @Override
+    public void onQueryComplete(int token, Object cookie, Cursor cursor) {
+
+    }
+
+    @Override
+    public void onInsertComplete(int token, Object cookie, Uri uri) {
+        switch (token) {
+            case UrlAsyncQueryHandler.QueryToken.ADD_URL:
+                Intent result = new Intent(this, UrlListFragment.class);
+                result.putExtra(ADD_URL, mUrl.getId());
+                setResult(RESULT_OK, result);
+                finish();
+                break;
+        }
+    }
+
+    @Override
+    public void onUpdateComplete(int token, Object cookie, int result) {
+
+    }
+
+    @Override
+    public void onDeleteComplete(int token, Object cookie, int result) {
+
+    }
+
+
     // ===========================================================
     // Methods
     // ===========================================================
@@ -94,14 +132,17 @@ public class AddUrlActivity extends BaseActivity implements View.OnClickListener
             Intent data = new Intent();
             data.putExtra(
                     ADD_URL,
-                    mUri = new UrlModel(
+                    mUrl = new UrlModel(
                             System.currentTimeMillis(),
                             mEtAddressUrl.getText().toString()
                     ));
+            mUrlAsyncQueryHandler.addUrl(mUrl);
             setResult(RESULT_OK, data);
             finish();
+
         }
     }
+
 
     private void setListeners() {
         mBtnAdd.setOnClickListener(this);

@@ -8,7 +8,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 
@@ -53,7 +52,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         initDrawer();
         openScreen(
                 UrlListFragment.newInstance(),
-                R.id.nav_contact_list,
+                R.id.nav_url_list,
                 false);
     }
 
@@ -87,10 +86,10 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-            case R.id.nav_contact_list:
+            case R.id.nav_url_list:
                 openScreen(
                         UrlListFragment.newInstance(),
-                        R.id.nav_contact_list,
+                        R.id.nav_url_list,
                         false
                 );
                 break;
@@ -151,7 +150,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
                 mustAddToBackStack
 
         );
-            Log.d(LOG_TAG,"after transaction" + fragment.getClass().getName());
     }
     // ===========================================================
     // Inner and Anonymous Classes

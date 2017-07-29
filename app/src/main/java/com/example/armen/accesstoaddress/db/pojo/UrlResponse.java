@@ -1,19 +1,19 @@
-package com.example.armen.accesstoaddress.pojo;
+package com.example.armen.accesstoaddress.db.pojo;
 
 
 import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
 
-public class ContactResponse {
+public class UrlResponse {
 
     @SerializedName("urls")
     private ArrayList<UrlModel> urlModels;
 
-    public ContactResponse() {
+    public UrlResponse() {
     }
 
-    public ContactResponse(ArrayList<UrlModel> urlModels) {
+    public UrlResponse(ArrayList<UrlModel> urlModels) {
         this.urlModels = urlModels;
     }
 
