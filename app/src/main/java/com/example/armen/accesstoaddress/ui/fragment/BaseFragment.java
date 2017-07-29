@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -32,6 +33,7 @@ public abstract class BaseFragment extends Fragment {
     // ===========================================================
     // Methods for/from SuperClass
     // ===========================================================
+
 
     @Nullable
     @Override
@@ -63,6 +65,8 @@ public abstract class BaseFragment extends Fragment {
     protected void setActionBarTitle(String actionBarTitle) {
         ((BaseActivity) getActivity()).setActionBarTitle(actionBarTitle);
     }
+
+    public abstract boolean onCreateOptionsMenu(Menu menu);
 
     // ===========================================================
     // Inner and Anonymous Classes

@@ -64,8 +64,6 @@ public class HttpRequestManager {
             connection.setUseCaches(false);
 
             switch (requestMethod) {
-                case RequestMethod.HEAD:
-                    // TODO
                 case RequestMethod.GET:
                     connection.connect();
                     break;

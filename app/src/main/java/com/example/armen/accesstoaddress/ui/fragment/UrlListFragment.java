@@ -12,6 +12,7 @@ import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -19,6 +20,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.example.armen.accesstoaddress.R;
 import com.example.armen.accesstoaddress.db.cursor.CursorReader;
@@ -32,9 +34,11 @@ import com.example.armen.accesstoaddress.util.Constant;
 import com.example.armen.accesstoaddress.util.NetworkUtil;
 import com.google.common.eventbus.Subscribe;
 
-import java.net.HttpURLConnection;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static android.app.Activity.RESULT_OK;
 import static com.example.armen.accesstoaddress.ui.activity.AddUrlActivity.ADD_URL;
@@ -56,6 +60,7 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
 
     private MenuItem mMenuSearch;
     private ImageView mIvAccess;
+    private SearchView sv_search;
     private Bundle mArgumentData;
     private RecyclerView mRv;
     private FloatingActionButton mFloatingActionButton;
@@ -63,7 +68,9 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
     private UrlAdapter mRecyclerViewAdapter;
     private LinearLayoutManager mLlm;
     private ArrayList<UrlModel> mUrlList;
+    private ArrayList<UrlModel> current;
     private UrlAsyncQueryHandler mUrlAsyncQueryHandler;
+    private SearchView searchView;
 
     // ===========================================================
     // Constructors
@@ -103,17 +110,23 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
         init();
         setListeners();
         loadData();
-
+        Log.d(LOG_TAG, "" + exists("http://www.rgagnon.com"));
+        Log.d(LOG_TAG, "" + exists("http://www.yahoo.com"));
         return view;
     }
 
     @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.menu_search, menu);
-        mMenuSearch = menu.findItem(R.id.menu_search);
-        SearchView searchView = (SearchView) MenuItemCompat.getActionView(mMenuSearch);
-        searchView.setOnClickListener(this);
-        super.onCreateOptionsMenu(menu, inflater);
+    public boolean onCreateOptionsMenu(Menu menu) {
+        return false;
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater menuInflater) {
+        menuInflater.inflate(R.menu.menu_search, menu);
+        mMenuSearch = menu.findItem(R.id.search);
+        searchView = (SearchView) MenuItemCompat.getActionView(mMenuSearch);
+        searchView.setOnQueryTextListener(this);
+        super.onCreateOptionsMenu(menu, menuInflater);
     }
 
     @Override
@@ -132,15 +145,19 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
     }
 
     public static boolean exists(String URLName) {
+        boolean result = false;
         try {
-            HttpURLConnection.setFollowRedirects(false);
-            HttpURLConnection con = (HttpURLConnection) new URL(URLName).openConnection();
-            con.setRequestMethod("HEAD");
-            return (con.getResponseCode() == HttpURLConnection.HTTP_OK);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            URL url = new URL("ftp://ftp1.freebsd.org/pub/FreeBSD/");
+
+            InputStream input = url.openStream();
+
+            System.out.println("SUCCESS");
+            result = true;
+
+        } catch (Exception ex) {
+            Logger.getLogger(UrlListFragment.class.getName()).log(Level.SEVERE, null, ex);
         }
+        return result;
     }
 
     @Override
@@ -166,6 +183,7 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
 
     @Override
     public void onItemClick(UrlModel urlAddress, int position) {
+        Toast.makeText(getContext(), urlAddress.getUrlAddress(), Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -261,6 +279,7 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
                 ArrayList<UrlModel> products = CursorReader.parseUrls(cursor);
                 mUrlList.clear();
                 mUrlList.addAll(products);
+                current = mUrlList;
                 mRecyclerViewAdapter.notifyDataSetChanged();
                 break;
         }
@@ -288,15 +307,16 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
 
     @Override
     public boolean onQueryTextChange(String newText) {
-//        newText = newText.toLowerCase();
-//        ArrayList<UrlModel> ss = new ArrayList<>();
-//        for(UrlModel model : mUrlList){
-//            String name = model.getUrlAddress().toLowerCase();
-//            if(name.contains(newText)){
-//                ss.add(model);
-//            }
-//        }
-//        mRecyclerViewAdapter.setFilter(ss);
+
+        newText = newText.toLowerCase();
+        ArrayList<UrlModel> listForSearch = new ArrayList<>();
+        for (UrlModel model : mUrlList) {
+            String name = model.getUrlAddress().toLowerCase();
+            if (name.contains(newText)) {
+                listForSearch.add(model);
+            }
+        }
+        mRecyclerViewAdapter.setFilter(listForSearch);
         return true;
     }
 

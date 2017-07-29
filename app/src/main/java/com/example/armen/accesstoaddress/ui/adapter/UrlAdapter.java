@@ -76,6 +76,7 @@ public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
     }
 
 
+
     // ===========================================================
     // Other Listeners, methods for/from Interfaces
     // ===========================================================
@@ -173,5 +174,9 @@ public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
         Log.d(LOG_TAG, mUrlList.size() + "");
         notifyDataSetChanged();
     }
-
+    public void setFilter(ArrayList<UrlModel> newList) {
+        mUrlList.clear();
+        mUrlList.addAll(newList);
+        notifyDataSetChanged();
+    }
 }

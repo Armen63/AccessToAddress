@@ -1,8 +1,8 @@
 package com.example.armen.accesstoaddress;
 
-import org.junit.Test;
+import org.testng.annotations.Test;
 
-import static org.junit.Assert.*;
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Example local unit test, which will execute on the development machine (host).
