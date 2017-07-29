@@ -16,6 +16,8 @@ import com.example.armen.accesstoaddress.R;
 import com.example.armen.accesstoaddress.db.pojo.UrlModel;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
 
@@ -149,4 +151,27 @@ public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
         void onItemLongClick(UrlModel url, int position);
 
     }
+
+    public void sortByName() {
+        Collections.sort(mUrlList,
+                new Comparator<UrlModel>() {
+                    public int compare(UrlModel f1, UrlModel f2) {
+                        return f1.getUrlAddress().compareTo(f2.getUrlAddress());
+                    }
+                });
+        Log.d(LOG_TAG, mUrlList.size() + "");
+        notifyDataSetChanged();
+    }
+
+    public void sortByNameRev() {
+        Collections.sort(mUrlList,
+                new Comparator<UrlModel>() {
+                    public int compare(UrlModel f1, UrlModel f2) {
+                        return f2.getUrlAddress().compareTo(f1.getUrlAddress());
+                    }
+                });
+        Log.d(LOG_TAG, mUrlList.size() + "");
+        notifyDataSetChanged();
+    }
+
 }

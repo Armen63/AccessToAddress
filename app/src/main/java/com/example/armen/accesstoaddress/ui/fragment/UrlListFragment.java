@@ -12,7 +12,6 @@ import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -36,7 +35,6 @@ import com.google.common.eventbus.Subscribe;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.TreeSet;
 
 import static android.app.Activity.RESULT_OK;
 import static com.example.armen.accesstoaddress.ui.activity.AddUrlActivity.ADD_URL;
@@ -122,14 +120,12 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_sort_by_name:
-                TreeSet<UrlModel> set = new TreeSet<>(mUrlList);
-                ArrayList<UrlModel> arr = new ArrayList<>(set);
-                mUrlList.clear();
-                mUrlList = arr;
-                Log.d(LOG_TAG, mUrlList.size()+"ttttttttttt");
-                Log.d(LOG_TAG, arr.size()+"ttttttttttt");
+                mRecyclerViewAdapter.sortByName();
                 mRecyclerViewAdapter.notifyDataSetChanged();
-
+                break;
+            case R.id.menu_sort_by_name_rev:
+                mRecyclerViewAdapter.sortByNameRev();
+                mRecyclerViewAdapter.notifyDataSetChanged();
                 break;
         }
         return true;
