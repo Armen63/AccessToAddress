@@ -139,7 +139,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener,
         actionBarDrawerToggle.syncState();
     }
 
-    private void openScreen(Fragment fragment, int item, boolean mustAddToBackStack) {
+    public void openScreen(Fragment fragment, int item, boolean mustAddToBackStack) {
 
         mNavigationView.getMenu().findItem(item).setChecked(true);
 

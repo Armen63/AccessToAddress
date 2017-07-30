@@ -8,6 +8,8 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -264,6 +266,14 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
                 new MyTask(uriModel).execute(uriModel.getUrlAddress());
                 int respTime = (int) (System.currentTimeMillis() - time);
 
+/* porcelem senc iran hanem noric dnem vor lists refresh lini...loading@ koruma erp vor norc mtnum em Url List*/
+                Fragment frg = null;
+                frg = getActivity().getSupportFragmentManager().findFragmentByTag(TAG);
+                final FragmentTransaction ft = getActivity().getSupportFragmentManager().beginTransaction();
+                ft.detach(frg);
+                ft.attach(frg);
+                ft.commit();
+                /*****************************************************************************/
                 uriModel.setResponseTime(respTime);
                 mUrlAsyncQueryHandler.addUrl(uriModel);
 
