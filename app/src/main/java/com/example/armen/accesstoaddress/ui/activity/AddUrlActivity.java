@@ -16,6 +16,8 @@ import com.example.armen.accesstoaddress.db.handler.UrlAsyncQueryHandler;
 import com.example.armen.accesstoaddress.db.pojo.UrlModel;
 import com.example.armen.accesstoaddress.ui.fragment.UrlListFragment;
 
+import static com.example.armen.accesstoaddress.util.Constant.API.LOADING;
+
 public class AddUrlActivity extends BaseActivity implements View.OnClickListener, UrlAsyncQueryHandler.AsyncQueryListener {
 
     // ===========================================================
@@ -134,7 +136,8 @@ public class AddUrlActivity extends BaseActivity implements View.OnClickListener
                     ADD_URL,
                     mUrl = new UrlModel(
                             System.currentTimeMillis(),
-                            mEtAddressUrl.getText().toString()
+                            mEtAddressUrl.getText().toString(),
+                            LOADING
                     ));
             mUrlAsyncQueryHandler.addUrl(mUrl);
             setResult(RESULT_OK, data);

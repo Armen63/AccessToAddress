@@ -40,7 +40,6 @@ public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
 
     public UrlAdapter(ArrayList<UrlModel> urlAddressList, OnItemClickListener onItemClickListener) {
         mUrlList = urlAddressList;
-        Log.d(LOG_TAG, mUrlList.size() + "  1");
         mOnItemClickListener = onItemClickListener;
     }
 
@@ -66,7 +65,6 @@ public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
 
     @Override
     public int getItemCount() {
-        Log.d(LOG_TAG, mUrlList.size() + "  2");
         return mUrlList.size();
     }
 
@@ -107,7 +105,6 @@ public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
             this.context = itemView.getContext();
             this.urlList = urlModelArrayList;
             this.onItemClickListener = onItemClickListener;
-            Log.d(LOG_TAG, urlList.size() + "3");
             findViews(itemView);
         }
 
@@ -118,13 +115,13 @@ public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
         }
 
         void bindData() {
-
             Glide.with(itemView.getContext())
                     .load(urlList.get(getAdapterPosition()).getImage())
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .into(ivUrl);
 
             tvUrlAddress.setText(urlList.get(getAdapterPosition()).getUrlAddress());
+
 
             llItemContainer.setOnClickListener(new View.OnClickListener() {
                 @Override

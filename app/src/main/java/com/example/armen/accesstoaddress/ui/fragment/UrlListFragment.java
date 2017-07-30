@@ -1,5 +1,6 @@
 package com.example.armen.accesstoaddress.ui.fragment;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -7,6 +8,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
@@ -19,6 +21,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -32,19 +35,18 @@ import com.example.armen.accesstoaddress.ui.activity.AddUrlActivity;
 import com.example.armen.accesstoaddress.ui.adapter.UrlAdapter;
 import com.example.armen.accesstoaddress.util.Constant;
 import com.example.armen.accesstoaddress.util.NetworkUtil;
-import com.google.common.eventbus.Subscribe;
 
-import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static android.app.Activity.RESULT_OK;
 import static com.example.armen.accesstoaddress.ui.activity.AddUrlActivity.ADD_URL;
+import static com.example.armen.accesstoaddress.util.Constant.API.ACCESS_EXIST;
+import static com.example.armen.accesstoaddress.util.Constant.API.NO_EXIST;
 
 public class UrlListFragment extends BaseFragment implements View.OnClickListener,
-        UrlAdapter.OnItemClickListener, UrlAsyncQueryHandler.AsyncQueryListener, SearchView.OnQueryTextListener {
+        UrlAdapter.OnItemClickListener , UrlAsyncQueryHandler.AsyncQueryListener, SearchView.OnQueryTextListener {
 
     private static final int REQUEST_CODE = 100;
 
@@ -58,19 +60,20 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
     // Fields
     // ===========================================================
 
-    private MenuItem mMenuSearch;
+    private static Boolean mCurrentBoolean;
+    private Button mBtnRefresh;
     private ImageView mIvAccess;
-    private SearchView sv_search;
-    private Bundle mArgumentData;
-    private RecyclerView mRv;
+    private SearchView searchView;
     private FloatingActionButton mFloatingActionButton;
-
+    private MenuItem mMenuSearch;
+    private RecyclerView mRv;
     private UrlAdapter mRecyclerViewAdapter;
     private LinearLayoutManager mLlm;
     private ArrayList<UrlModel> mUrlList;
-    private ArrayList<UrlModel> current;
     private UrlAsyncQueryHandler mUrlAsyncQueryHandler;
-    private SearchView searchView;
+
+    public UrlListFragment() {
+    }
 
     // ===========================================================
     // Constructors
@@ -110,10 +113,9 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
         init();
         setListeners();
         loadData();
-        Log.d(LOG_TAG, "" + exists("http://www.rgagnon.com"));
-        Log.d(LOG_TAG, "" + exists("http://www.yahoo.com"));
         return view;
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -144,22 +146,6 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
         return true;
     }
 
-    public static boolean exists(String URLName) {
-        boolean result = false;
-        try {
-            URL url = new URL("ftp://ftp1.freebsd.org/pub/FreeBSD/");
-
-            InputStream input = url.openStream();
-
-            System.out.println("SUCCESS");
-            result = true;
-
-        } catch (Exception ex) {
-            Logger.getLogger(UrlListFragment.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        return result;
-    }
-
     @Override
     public void onDestroyView() {
         super.onDestroyView();
@@ -177,6 +163,8 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
                 Intent intent = new Intent(getActivity(), AddUrlActivity.class);
                 this.startActivityForResult(intent, REQUEST_CODE);
                 break;
+            case R.id.btn_refresh:
+                //TODO refresh
         }
     }
 
@@ -188,43 +176,47 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
 
     @Override
     public void onItemLongClick(final UrlModel urlModel, final int position) {
-        mUrlAsyncQueryHandler.deleteUrl(urlModel, position);
-        mUrlList.remove(position);
-        mRecyclerViewAdapter.notifyItemRemoved(position);
+        openDeleteProductDialog(urlModel, position);
     }
 
+
+    // ===========================================================
+    // Other Listeners, methods for/from Interfaces
+    // ===========================================================
+
+    private void setListeners() {
+        mFloatingActionButton.setOnClickListener(this);
+        mBtnRefresh.setOnClickListener(this);
+    }
+
+
+    // ===========================================================
+    // Methods
+    // ===========================================================
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (data != null) {
             if (resultCode == RESULT_OK && requestCode == REQUEST_CODE) {
                 UrlModel uriModel = data.getParcelableExtra(ADD_URL);
-
+                exists(uriModel);
+                if(mCurrentBoolean != null){
+                    if(mCurrentBoolean){
+                        uriModel.setImage(ACCESS_EXIST);
+                    }else{
+                        uriModel.setImage(NO_EXIST);
+                    }
+                }
                 mUrlList.add(uriModel);
                 mRecyclerViewAdapter.notifyDataSetChanged();
 
             }
         }
     }
-    // ===========================================================
-    // Other Listeners, methods for/from Interfaces
-    // ===========================================================
-
-    @Subscribe
-    public void onEventReceived(ArrayList<UrlModel> UrlModel) {
-    }
-
-    // ===========================================================
-    // Methods
-    // ===========================================================
-
-
-    private void setListeners() {
-        mFloatingActionButton.setOnClickListener(this);
-    }
 
     private void findViews(View view) {
         mRv = (RecyclerView) view.findViewById(R.id.rv_url_list);
+        mBtnRefresh = (Button) view.findViewById(R.id.btn_refresh);
         mFloatingActionButton = (FloatingActionButton) view.findViewById(R.id.fl_btn_url_add);
         mIvAccess = (ImageView) view.findViewById(R.id.iv_item_access_checker);
     }
@@ -242,27 +234,43 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
         mRv.setAdapter(mRecyclerViewAdapter);
     }
 
-    public void getData() {
-        if (getArguments() != null) {
-            mArgumentData = getArguments().getBundle(Constant.Argument.ARGUMENT_DATA);
-        }
-    }
-
-    private void customizeActionBar() {
-
-    }
 
     private void loadData() {
         if (NetworkUtil.getInstance().isConnected(getActivity())) {
             UrlIntentService.start(
                     getActivity(),
                     Constant.API.URL_LIST,
-                    Constant.RequestType.PRODUCT_LIST
+                    Constant.RequestType.URL_LIST
             );
 
         } else {
             mUrlAsyncQueryHandler.getUrls();
         }
+    }
+
+    public void exists(final UrlModel urlModel) {
+        new Thread(){
+            @Override
+            public void run() {
+                super.run();
+                try {
+                    URL url = new URL(urlModel.getUrlAddress());
+                    HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                    con.setRequestMethod(Constant.RequestMethod.HEAD);
+                    con.connect();
+                    Log.i(LOG_TAG, "con.getResponseCode() IS : " + con.getResponseCode());
+                    mCurrentBoolean = false;
+                    if (con.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                        Log.i(LOG_TAG, "Sucess");
+                        mCurrentBoolean = true;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Log.i(LOG_TAG, "fail");
+                    mCurrentBoolean = false;
+                }
+            }
+        }.start();
     }
 
     @Override
@@ -276,10 +284,9 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
     public void onQueryComplete(int token, Object cookie, Cursor cursor) {
         switch (token) {
             case UrlAsyncQueryHandler.QueryToken.GET_URLS:
-                ArrayList<UrlModel> products = CursorReader.parseUrls(cursor);
+                ArrayList<UrlModel> urlModels = CursorReader.parseUrls(cursor);
                 mUrlList.clear();
-                mUrlList.addAll(products);
-                current = mUrlList;
+                mUrlList.addAll(urlModels);
                 mRecyclerViewAdapter.notifyDataSetChanged();
                 break;
         }
@@ -297,7 +304,13 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
 
     @Override
     public void onDeleteComplete(int token, Object cookie, int result) {
-
+        switch (token) {
+            case UrlAsyncQueryHandler.QueryToken.DELETE_URL:
+                int position = (int) cookie;
+                mUrlList.remove(position);
+                mRecyclerViewAdapter.notifyItemRemoved(position);
+                break;
+        }
     }
 
     @Override
@@ -320,6 +333,25 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
         return true;
     }
 
+
+    private void openDeleteProductDialog(final UrlModel urlModel, final int position) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setMessage(R.string.are_you_sure)
+                .setCancelable(false)
+                .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        mUrlAsyncQueryHandler.deleteUrl(urlModel, position);
+                        dialog.cancel();
+                    }
+                })
+                .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.dismiss();
+                    }
+                });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
     // ===========================================================
     // Inner and Anonymous Classes
     // ===========================================================

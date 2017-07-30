@@ -9,8 +9,7 @@ public class Constant {
         public static final String URL_LIST = HOST + "/master/url%20list/urls.json";
         public static final String ACCESS_EXIST = "https://github.com/Armen63/armenasatryan.github.io/blob/master/url%20list/access_exist.png?raw=true";
         public static final String NO_EXIST = "https://raw.githubusercontent.com/Armen63/armenasatryan.github.io/master/url%20list/no_access.png";
-//        public static final String URL_ITEM = HOST + "/master/contact_list/contacts/"; // + id
-//        public static final String URL_ITEM_POSTFIX = "/details.json";
+        public static final String LOADING = "https://raw.githubusercontent.com/Armen63/armenasatryan.github.io/master/url%20list/loading.gif";
     }
 
     public class Action {
@@ -24,13 +23,25 @@ public class Constant {
     public class Extra {
         public static final String EXTRA_URL = "EXTRA_URL";
         public static final String EXTRA_URL_ID = "EXTRA_URL_ID";
-        public static final String PRODUCT_ID = "PRODUCT_ID";
+        public static final String URL_ID = "URL_ID";
         public static final String URL = "URL";
         public static final String POST_ENTITY = "POST_ENTITY";
         public static final String REQUEST_TYPE = "REQUEST_TYPE";
         public static final String NOTIFICATION_DATA = "NOTIFICATION_DATA";
     }
 
+
+    public class RequestType {
+        public static final int URL_LIST = 1;
+        public static final int URL_ITEM = 2;
+    }
+
+    public class RequestMethod {
+        public static final String POST = "POST";
+        public static final String GET = "GET";
+        public static final String PUT = "PUT";
+        public static final String HEAD = "HEAD";
+    }
 
     public class Preferances {
         public static final String PREFERENCES_NAME = "PREFERENCES_NAME";
@@ -39,10 +50,6 @@ public class Constant {
     }
 
 
-    public class RequestType {
-        public static final int PRODUCT_LIST = 1;
-        public static final int PRODUCT_ITEM = 2;
-    }
 
     public class Bundle {
     }

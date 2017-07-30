@@ -8,7 +8,7 @@ import android.util.Log;
 import com.example.armen.accesstoaddress.db.handler.PlQueryHandler;
 import com.example.armen.accesstoaddress.db.pojo.UrlModel;
 import com.example.armen.accesstoaddress.db.pojo.UrlResponse;
-import com.example.armen.accesstoaddress.io.bus.ApiEvent;
+import com.example.armen.accesstoaddress.io.bus.event.ApiEvent;
 import com.example.armen.accesstoaddress.io.bus.BusProvider;
 import com.example.armen.accesstoaddress.io.rest.HttpRequestManager;
 import com.example.armen.accesstoaddress.io.rest.HttpResponseUtil;
@@ -83,7 +83,7 @@ public class UrlIntentService extends IntentService {
         HttpURLConnection connection;
 
         switch (requestType) {
-            case Constant.RequestType.PRODUCT_LIST:
+            case Constant.RequestType.URL_LIST:
 
                 // calling API
                 connection = HttpRequestManager.executeRequest(
@@ -96,22 +96,22 @@ public class UrlIntentService extends IntentService {
                 String jsonList = HttpResponseUtil.parseResponse(connection);
 
                 // deserialize json string to model
-                UrlResponse productResponse = new Gson().fromJson(jsonList, UrlResponse.class);
+                UrlResponse urlResponse = new Gson().fromJson(jsonList, UrlResponse.class);
 
                 // check server data (null if something went wrong)
-                if (productResponse != null) {
+                if (urlResponse != null) {
 
-                    // get all products
-                    ArrayList<UrlModel> urlModels = productResponse.getUrlModels();
+                    // get all urls
+                    ArrayList<UrlModel> urlModels = urlResponse.getUrlModels();
 
-                    // add all products into db
+                    // add all urls into db
                     PlQueryHandler.addUrlModels(this, urlModels);
 
                     // post to UI
-                    BusProvider.getInstance().post(new ApiEvent<>(ApiEvent.EventType.PRODUCT_LIST_LOADED, true, urlModels));
+                    BusProvider.getInstance().post(new ApiEvent<>(ApiEvent.EventType.Url_LIST_LOADED, true, urlModels));
 
                 } else {
-                    BusProvider.getInstance().post(new ApiEvent<>(ApiEvent.EventType.PRODUCT_LIST_LOADED, false));
+                    BusProvider.getInstance().post(new ApiEvent<>(ApiEvent.EventType.Url_LIST_LOADED, false));
                 }
                 break;
         }

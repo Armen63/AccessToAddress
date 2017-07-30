@@ -1,6 +1,8 @@
 package com.example.armen.accesstoaddress.io.rest;
 
 
+import com.example.armen.accesstoaddress.util.Constant;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -17,17 +19,6 @@ public class HttpRequestManager {
 
     private final static String LOG_TAG = HttpRequestManager.class.getSimpleName();
 
-    public class RequestType {
-        public static final int URL_LIST = 1;
-        public static final int URL_ITEM = 2;
-    }
-
-    public class RequestMethod {
-        public static final String POST = "POST";
-        public static final String GET = "GET";
-        public static final String PUT = "PUT";
-        public static final String HEAD = "HEAD";
-    }
 
     // ===========================================================
     // Fields
@@ -64,12 +55,15 @@ public class HttpRequestManager {
             connection.setUseCaches(false);
 
             switch (requestMethod) {
-                case RequestMethod.GET:
+                case Constant.RequestMethod.HEAD:
+                    connection.connect();
+                    break;
+                case Constant.RequestMethod.GET:
                     connection.connect();
                     break;
 
-                case RequestMethod.PUT:
-                case RequestMethod.POST:
+                case Constant.RequestMethod.PUT:
+                case Constant.RequestMethod.POST:
                     connection.setRequestProperty("Content-Type", "application/json");
                     connection.setDoInput(true);
                     connection.setDoOutput(true);
