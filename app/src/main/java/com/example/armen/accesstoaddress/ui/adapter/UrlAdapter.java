@@ -2,7 +2,6 @@ package com.example.armen.accesstoaddress.ui.adapter;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +18,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
+import static com.example.armen.accesstoaddress.util.Constant.API.ACCESS_EXIST;
+
 public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
 
     // ===========================================================
@@ -33,6 +34,7 @@ public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
 
     private ArrayList<UrlModel> mUrlList;
     private OnItemClickListener mOnItemClickListener;
+
 
     // ===========================================================
     // Constructors
@@ -72,7 +74,6 @@ public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
     public void onAttachedToRecyclerView(RecyclerView recyclerView) {
         super.onAttachedToRecyclerView(recyclerView);
     }
-
 
 
     // ===========================================================
@@ -150,30 +151,69 @@ public class UrlAdapter extends RecyclerView.Adapter<UrlAdapter.ViewHolder> {
 
     }
 
-    public void sortByName() {
+    public void sortByName(ArrayList<UrlModel> allItems) {
+        mUrlList.clear();
+        mUrlList.addAll(allItems);
         Collections.sort(mUrlList,
                 new Comparator<UrlModel>() {
                     public int compare(UrlModel f1, UrlModel f2) {
                         return f1.getUrlAddress().compareTo(f2.getUrlAddress());
                     }
                 });
-        Log.d(LOG_TAG, mUrlList.size() + "");
         notifyDataSetChanged();
     }
 
-    public void sortByNameRev() {
+    public void sortByNameRev(ArrayList<UrlModel> allItems) {
+        mUrlList.clear();
+        mUrlList.addAll(allItems);
         Collections.sort(mUrlList,
                 new Comparator<UrlModel>() {
                     public int compare(UrlModel f1, UrlModel f2) {
                         return f2.getUrlAddress().compareTo(f1.getUrlAddress());
                     }
                 });
-        Log.d(LOG_TAG, mUrlList.size() + "");
         notifyDataSetChanged();
     }
-    public void setFilter(ArrayList<UrlModel> newList) {
+
+    public void sortByAccess(ArrayList<UrlModel> allItems) {
         mUrlList.clear();
-        mUrlList.addAll(newList);
+        for (UrlModel model : allItems) {
+            if (model.getImage() != null && model.getImage().equals(ACCESS_EXIST))
+                mUrlList.add(model);
+        }
         notifyDataSetChanged();
     }
+
+
+    public void displayAll(ArrayList<UrlModel> showAll) {
+        mUrlList.clear();
+        mUrlList.addAll(showAll);
+        notifyDataSetChanged();
+    }
+
+    public void sortByTime(ArrayList<UrlModel> allItems) {
+        mUrlList.clear();
+        mUrlList.addAll(allItems);
+        Collections.sort(mUrlList,
+                new Comparator<UrlModel>() {
+                    public int compare(UrlModel f1, UrlModel f2) {
+                        return f1.getResponseTime().compareTo(f2.getResponseTime());
+                    }
+                });
+    }
+
+    public void search(String text, ArrayList<UrlModel> allitems) {
+        mUrlList.clear();
+        if (text.isEmpty()) {
+            mUrlList.addAll(allitems);
+        } else {
+            text = text.toLowerCase();
+            for (UrlModel singleModel : allitems) {
+                if (singleModel.getUrlAddress().toString().contains(text)) {
+                    mUrlList.add(singleModel);
+                }
+            }
+        }
+    }
+
 }

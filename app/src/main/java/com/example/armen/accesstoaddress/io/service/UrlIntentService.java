@@ -8,8 +8,8 @@ import android.util.Log;
 import com.example.armen.accesstoaddress.db.handler.PlQueryHandler;
 import com.example.armen.accesstoaddress.db.pojo.UrlModel;
 import com.example.armen.accesstoaddress.db.pojo.UrlResponse;
-import com.example.armen.accesstoaddress.io.bus.event.ApiEvent;
 import com.example.armen.accesstoaddress.io.bus.BusProvider;
+import com.example.armen.accesstoaddress.io.bus.event.ApiEvent;
 import com.example.armen.accesstoaddress.io.rest.HttpRequestManager;
 import com.example.armen.accesstoaddress.io.rest.HttpResponseUtil;
 import com.example.armen.accesstoaddress.util.Constant;
@@ -17,6 +17,8 @@ import com.google.gson.Gson;
 
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
+
+import static com.example.armen.accesstoaddress.util.Constant.API.ACCESS_EXIST;
 
 
 public class UrlIntentService extends IntentService {
@@ -50,16 +52,7 @@ public class UrlIntentService extends IntentService {
     /**
      * @param url         - calling api url
      * @param requestType - string constant that helps us to distinguish what request it is
-     * @param postEntity  - POST request entity (json string that must be sent on server)
      */
-    public static void start(Context context, String url, String postEntity,
-                             int requestType) {
-        Intent intent = new Intent(context, UrlIntentService.class);
-        intent.putExtra(Constant.Extra.URL, url);
-        intent.putExtra(Constant.Extra.REQUEST_TYPE, requestType);
-        intent.putExtra(Constant.Extra.POST_ENTITY, postEntity);
-        context.startService(intent);
-    }
 
     public static void start(Context context, String url,
                              int requestType) {
@@ -76,7 +69,6 @@ public class UrlIntentService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         String url = intent.getExtras().getString(Constant.Extra.URL);
-        String data = intent.getExtras().getString(Constant.Extra.POST_ENTITY);
         int requestType = intent.getExtras().getInt(Constant.Extra.REQUEST_TYPE);
         Log.i(LOG_TAG, requestType + Constant.Symbol.SPACE + url);
 
@@ -88,7 +80,7 @@ public class UrlIntentService extends IntentService {
                 // calling API
                 connection = HttpRequestManager.executeRequest(
                         url,
-                        "GET",
+                        Constant.RequestMethod.GET,
                         null
                 );
 
@@ -103,7 +95,9 @@ public class UrlIntentService extends IntentService {
 
                     // get all urls
                     ArrayList<UrlModel> urlModels = urlResponse.getUrlModels();
-
+                    for(UrlModel ddd: urlModels){
+                        ddd.setImage(ACCESS_EXIST);
+                    }
                     // add all urls into db
                     PlQueryHandler.addUrlModels(this, urlModels);
 

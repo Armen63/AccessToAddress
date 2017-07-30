@@ -4,6 +4,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -14,7 +15,6 @@ import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -43,10 +43,11 @@ import java.util.ArrayList;
 import static android.app.Activity.RESULT_OK;
 import static com.example.armen.accesstoaddress.ui.activity.AddUrlActivity.ADD_URL;
 import static com.example.armen.accesstoaddress.util.Constant.API.ACCESS_EXIST;
-import static com.example.armen.accesstoaddress.util.Constant.API.NO_EXIST;
+import static com.example.armen.accesstoaddress.util.Constant.API.LOADING;
+import static com.example.armen.accesstoaddress.util.Constant.API.NO_ACCESS;
 
 public class UrlListFragment extends BaseFragment implements View.OnClickListener,
-        UrlAdapter.OnItemClickListener , UrlAsyncQueryHandler.AsyncQueryListener, SearchView.OnQueryTextListener {
+        UrlAdapter.OnItemClickListener, UrlAsyncQueryHandler.AsyncQueryListener, SearchView.OnQueryTextListener {
 
     private static final int REQUEST_CODE = 100;
 
@@ -55,25 +56,24 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
     // ===========================================================
 
     private static final String LOG_TAG = UrlListFragment.class.getSimpleName();
+    private static final String TAG = UrlListFragment.class.getSimpleName();
 
     // ===========================================================
     // Fields
     // ===========================================================
 
-    private static Boolean mCurrentBoolean;
     private Button mBtnRefresh;
     private ImageView mIvAccess;
     private SearchView searchView;
     private FloatingActionButton mFloatingActionButton;
     private MenuItem mMenuSearch;
     private RecyclerView mRv;
-    private UrlAdapter mRecyclerViewAdapter;
+    private UrlAdapter mAdapter;
     private LinearLayoutManager mLlm;
     private ArrayList<UrlModel> mUrlList;
+    private ArrayList<UrlModel> mUrlListSafe;
     private UrlAsyncQueryHandler mUrlAsyncQueryHandler;
 
-    public UrlListFragment() {
-    }
 
     // ===========================================================
     // Constructors
@@ -135,12 +135,24 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_sort_by_name:
-                mRecyclerViewAdapter.sortByName();
-                mRecyclerViewAdapter.notifyDataSetChanged();
+                mAdapter.sortByName(mUrlListSafe);
+                mAdapter.notifyDataSetChanged();
                 break;
             case R.id.menu_sort_by_name_rev:
-                mRecyclerViewAdapter.sortByNameRev();
-                mRecyclerViewAdapter.notifyDataSetChanged();
+                mAdapter.sortByNameRev(mUrlListSafe);
+                mAdapter.notifyDataSetChanged();
+                break;
+            case R.id.menu_sort_by_access:
+                mAdapter.sortByAccess(mUrlListSafe);
+                mAdapter.notifyDataSetChanged();
+                break;
+            case R.id.menu_sort_displayAll:
+                mAdapter.displayAll(mUrlListSafe);
+                mAdapter.notifyDataSetChanged();
+                break;
+            case R.id.menu_sort_by_time:
+                mAdapter.sortByTime(mUrlListSafe);
+                mAdapter.notifyDataSetChanged();
                 break;
         }
         return true;
@@ -164,7 +176,7 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
                 this.startActivityForResult(intent, REQUEST_CODE);
                 break;
             case R.id.btn_refresh:
-                //TODO refresh
+
         }
     }
 
@@ -179,10 +191,58 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
         openDeleteProductDialog(urlModel, position);
     }
 
+    @Override
+    public boolean onQueryTextSubmit(String newText) {
+        return false;
+    }
+
+    @Override
+    public boolean onQueryTextChange(String newText) {
+        mAdapter.search(newText, mUrlListSafe);
+        return true;
+    }
+
 
     // ===========================================================
     // Other Listeners, methods for/from Interfaces
     // ===========================================================
+    @Override
+    public void onQueryComplete(int token, Object cookie, Cursor cursor) {
+        switch (token) {
+            case UrlAsyncQueryHandler.QueryToken.GET_URLS:
+                ArrayList<UrlModel> urlModels = CursorReader.parseUrls(cursor);
+                mUrlList.clear();
+                mUrlList.addAll(urlModels);
+                mUrlListSafe = new ArrayList<>(mUrlList);
+
+                mAdapter.notifyDataSetChanged();
+                break;
+        }
+    }
+
+    @Override
+    public void onInsertComplete(int token, Object cookie, Uri uri) {
+
+    }
+
+    @Override
+    public void onUpdateComplete(int token, Object cookie, int result) {
+        switch (token) {
+            case UrlAsyncQueryHandler.QueryToken.UPDATE_URL:
+                mAdapter.notifyDataSetChanged();
+        }
+    }
+
+    @Override
+    public void onDeleteComplete(int token, Object cookie, int result) {
+        switch (token) {
+            case UrlAsyncQueryHandler.QueryToken.DELETE_URL:
+                int position = (int) cookie;
+                mUrlList.remove(position);
+                mAdapter.notifyItemRemoved(position);
+                break;
+        }
+    }
 
     private void setListeners() {
         mFloatingActionButton.setOnClickListener(this);
@@ -199,16 +259,13 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
         if (data != null) {
             if (resultCode == RESULT_OK && requestCode == REQUEST_CODE) {
                 UrlModel uriModel = data.getParcelableExtra(ADD_URL);
-                exists(uriModel);
-                if(mCurrentBoolean != null){
-                    if(mCurrentBoolean){
-                        uriModel.setImage(ACCESS_EXIST);
-                    }else{
-                        uriModel.setImage(NO_EXIST);
-                    }
-                }
-                mUrlList.add(uriModel);
-                mRecyclerViewAdapter.notifyDataSetChanged();
+
+                long time = System.currentTimeMillis();
+                new MyTask(uriModel).execute(uriModel.getUrlAddress());
+                int respTime = (int) (System.currentTimeMillis() - time);
+
+                uriModel.setResponseTime(respTime);
+                mUrlAsyncQueryHandler.addUrl(uriModel);
 
             }
         }
@@ -230,8 +287,8 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
         mRv.setItemAnimator(new DefaultItemAnimator());
         mRv.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
         mUrlList = new ArrayList<>();
-        mRecyclerViewAdapter = new UrlAdapter(mUrlList, this);
-        mRv.setAdapter(mRecyclerViewAdapter);
+        mAdapter = new UrlAdapter(mUrlList, this);
+        mRv.setAdapter(mAdapter);
     }
 
 
@@ -248,89 +305,10 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
         }
     }
 
-    public void exists(final UrlModel urlModel) {
-        new Thread(){
-            @Override
-            public void run() {
-                super.run();
-                try {
-                    URL url = new URL(urlModel.getUrlAddress());
-                    HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                    con.setRequestMethod(Constant.RequestMethod.HEAD);
-                    con.connect();
-                    Log.i(LOG_TAG, "con.getResponseCode() IS : " + con.getResponseCode());
-                    mCurrentBoolean = false;
-                    if (con.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                        Log.i(LOG_TAG, "Sucess");
-                        mCurrentBoolean = true;
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Log.i(LOG_TAG, "fail");
-                    mCurrentBoolean = false;
-                }
-            }
-        }.start();
-    }
-
     @Override
     public void onResume() {
         mUrlAsyncQueryHandler.getUrls();
         super.onResume();
-    }
-
-
-    @Override
-    public void onQueryComplete(int token, Object cookie, Cursor cursor) {
-        switch (token) {
-            case UrlAsyncQueryHandler.QueryToken.GET_URLS:
-                ArrayList<UrlModel> urlModels = CursorReader.parseUrls(cursor);
-                mUrlList.clear();
-                mUrlList.addAll(urlModels);
-                mRecyclerViewAdapter.notifyDataSetChanged();
-                break;
-        }
-    }
-
-    @Override
-    public void onInsertComplete(int token, Object cookie, Uri uri) {
-
-    }
-
-    @Override
-    public void onUpdateComplete(int token, Object cookie, int result) {
-
-    }
-
-    @Override
-    public void onDeleteComplete(int token, Object cookie, int result) {
-        switch (token) {
-            case UrlAsyncQueryHandler.QueryToken.DELETE_URL:
-                int position = (int) cookie;
-                mUrlList.remove(position);
-                mRecyclerViewAdapter.notifyItemRemoved(position);
-                break;
-        }
-    }
-
-    @Override
-    public boolean onQueryTextSubmit(String query) {
-        return false;
-    }
-
-    @Override
-    public boolean onQueryTextChange(String newText) {
-
-        newText = newText.toLowerCase();
-        ArrayList<UrlModel> listForSearch = new ArrayList<>();
-        for (UrlModel model : mUrlList) {
-            String name = model.getUrlAddress().toLowerCase();
-            if (name.contains(newText)) {
-                listForSearch.add(model);
-            }
-        }
-        mRecyclerViewAdapter.setFilter(listForSearch);
-        return true;
     }
 
 
@@ -355,4 +333,65 @@ public class UrlListFragment extends BaseFragment implements View.OnClickListene
     // ===========================================================
     // Inner and Anonymous Classes
     // ===========================================================
+
+    public class MyTask extends AsyncTask<String, Void, String> {
+
+        UrlModel model;
+        boolean checker;
+
+        public MyTask(UrlModel model) {
+            this.model = model;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            model.setImage(LOADING);
+            mUrlAsyncQueryHandler.updateUrl(model);
+
+            mUrlList.clear();
+            mUrlList.add(model);
+            mAdapter.notifyDataSetChanged();
+
+        }
+
+        @Override
+        protected String doInBackground(String... param) {
+            try {
+                String address = param[0];
+                URL url = new URL(address);
+                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                con.setRequestMethod(Constant.RequestMethod.HEAD);
+                con.connect();
+                if (con.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    checker = true;
+                    return "";
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                return "";
+            }
+            return "0";
+        }
+
+
+        @Override
+        protected void onPostExecute(String image) {
+            super.onPostExecute(image);
+            if (checker) {
+                model.setImage(ACCESS_EXIST);
+                mUrlAsyncQueryHandler.updateUrl(model);
+                mAdapter.notifyDataSetChanged();
+
+
+            } else {
+                model.setImage(NO_ACCESS);
+                mUrlAsyncQueryHandler.updateUrl(model);
+                mAdapter.notifyDataSetChanged();
+
+            }
+        }
+    }
+
 }

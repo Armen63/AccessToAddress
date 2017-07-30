@@ -2,6 +2,7 @@ package com.example.armen.accesstoaddress.db.pojo;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.NonNull;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -17,18 +18,23 @@ public class UrlModel implements Parcelable, Comparable{
     @SerializedName("image")
     private String image;
 
+    @SerializedName("response_time")
+    private Integer responseTime;
+
     public UrlModel() {
     }
+
 
     public UrlModel(long id, String urlAddress) {
         this.id = id;
         this.urlAddress = urlAddress;
     }
 
-    public UrlModel(long id, String urlAddress, String image) {
-        this.id = id;
-        this.urlAddress = urlAddress;
-        this.image = image;
+
+    protected UrlModel(Parcel in) {
+        id = in.readLong();
+        urlAddress = in.readString();
+        image = in.readString();
     }
 
     public static final Creator<UrlModel> CREATOR = new Creator<UrlModel>() {
@@ -67,14 +73,12 @@ public class UrlModel implements Parcelable, Comparable{
         this.image = image;
     }
 
-    public static Creator<UrlModel> getCREATOR() {
-        return CREATOR;
+    public Integer getResponseTime() {
+        return responseTime;
     }
 
-    protected UrlModel(Parcel in) {
-        id = in.readLong();
-        urlAddress = in.readString();
-        image = in.readString();
+    public void setResponseTime(Integer responseTime) {
+        this.responseTime = responseTime;
     }
 
     @Override
@@ -90,14 +94,7 @@ public class UrlModel implements Parcelable, Comparable{
     }
 
     @Override
-    public int compareTo(Object o) {
-
-        UrlModel entry = (UrlModel) o;
-
-        int result = urlAddress.compareTo(urlAddress);
-        if(result != 0) {
-            return result;
-        }
+    public int compareTo(@NonNull Object o) {
         return 0;
     }
 }

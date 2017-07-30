@@ -1,6 +1,5 @@
 package com.example.armen.accesstoaddress;
 
-import org.testng.annotations.Test;
 
 import static junit.framework.Assert.assertEquals;
 
